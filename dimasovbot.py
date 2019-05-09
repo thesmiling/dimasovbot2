@@ -19,4 +19,4 @@ if text == "привет": bot.send_message(chat_id, 'Привет, я бот - 
 elif text == "как дела?": bot.send_message(chat_id, 'Хорошо, а у тебя?') 
 else: bot.send_message(chat_id, 'Простите, я вам не понял :(')
 
-bot.polling()
+bot.polling(none_stop=True)
