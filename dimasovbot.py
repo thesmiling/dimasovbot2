@@ -2,6 +2,9 @@
 import config
 import telebot
 
+TOKEN = '406374437:AAF96C4YUsV8_-SLsNTKDkSsp9AzxWS9o1c' 
+bot = telebot.TeleBot(TOKEN)
+
 bot = telebot.TeleBot(config.token)
 
 @bot.message_handler(content_types=["text"])
