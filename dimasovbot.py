@@ -26,5 +26,14 @@ dispatcher.add_handler(start_command_handler)
 dispatcher.add_handler(text_message_handler)
 # Начинаем поиск обновлений
 updater.start_polling(clean=True)
+
+@bot.message_handler(content_types=["text"])
+def default_test(message):
+    keyboard = types.InlineKeyboardMarkup()
+    url_button = types.InlineKeyboardButton(text="Подкинуть мелочи", url="https://money.yandex.ru/bill/pay/WJaGlAM4too.190513")
+    keyboard.add(url_button)
+    bot.send_message(message.chat.id, "Заряди бабла, на очаково не хватает", reply_markup=keyboard)
+
+
 # Останавливаем бота, если были нажаты Ctrl + C
 updater.idle()
