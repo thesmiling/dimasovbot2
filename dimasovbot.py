@@ -3,6 +3,15 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import apiai, json
 updater = Updater(token='406374437:AAF96C4YUsV8_-SLsNTKDkSsp9AzxWS9o1c') # Токен API к Telegram
 dispatcher = updater.dispatcher
+
+# Кнопки
+@bot.message_handler(content_types=["Дать"])
+def default_test(message):
+    keyboard = types.InlineKeyboardMarkup()
+    url_button = types.InlineKeyboardButton(text="Подкинуть мелочи", url="https://money.yandex.ru/bill/pay/WJaGlAM4too.190513")
+    keyboard.add(url_button)
+    bot.send_message(message.chat.id, "Заряди бабла, на очаково не хватает", reply_markup=keyboard)
+
 # Обработка команд
 def startCommand(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text='Привет, давай пообщаемся?')
@@ -26,13 +35,6 @@ dispatcher.add_handler(start_command_handler)
 dispatcher.add_handler(text_message_handler)
 # Начинаем поиск обновлений
 updater.start_polling(clean=True)
-# Кнопки
-@bot.message_handler(content_types=["Дать"])
-def default_test(message):
-    keyboard = types.InlineKeyboardMarkup()
-    url_button = types.InlineKeyboardButton(text="Подкинуть мелочи", url="https://money.yandex.ru/bill/pay/WJaGlAM4too.190513")
-    keyboard.add(url_button)
-    bot.send_message(message.chat.id, "Заряди бабла, на очаково не хватает", reply_markup=keyboard)
 
 
 # Останавливаем бота, если были нажаты Ctrl + C
