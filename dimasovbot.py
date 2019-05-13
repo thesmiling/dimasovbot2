@@ -26,8 +26,8 @@ dispatcher.add_handler(start_command_handler)
 dispatcher.add_handler(text_message_handler)
 # Начинаем поиск обновлений
 updater.start_polling(clean=True)
-
-@bot.message_handler(content_types=["text"])
+# Кнопки
+@bot.message_handler(content_types=["Дать"])
 def default_test(message):
     keyboard = types.InlineKeyboardMarkup()
     url_button = types.InlineKeyboardButton(text="Подкинуть мелочи", url="https://money.yandex.ru/bill/pay/WJaGlAM4too.190513")
