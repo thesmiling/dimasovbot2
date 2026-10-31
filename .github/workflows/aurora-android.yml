@@ -25,8 +25,9 @@ jobs:
         shell: bash
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          command -v sdkmanager || ls "$ANDROID_HOME/cmdline-tools"
-          sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          "$SDKMANAGER" --version
+          "$SDKMANAGER" 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
