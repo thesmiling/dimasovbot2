@@ -21,10 +21,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
       - name: Android API 37
-        run: sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          command -v sdkmanager || ls "$ANDROID_HOME/cmdline-tools"
+          sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
       - name: Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
