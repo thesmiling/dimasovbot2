@@ -50,6 +50,8 @@ jobs:
           PY
       - name: Apply UX fixes and verify screen regression guards
         run: python3 .github/scripts/aurora_ux_fix.py
+      - name: Apply native living Aurora graphics
+        run: python3 .github/scripts/aurora_motion_apply.py
       - name: Unit tests and APK
         working-directory: source/AuroraTwinAndroid
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
