@@ -1,0 +1,42 @@
+name: Aurora Twin Android APK
+
+on:
+  push:
+    branches:
+      - aurora-android-prototype
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build native Compose demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Android API 37
+        run: sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools'
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Extract native project
+        run: unzip -oq aurora-android/source_bundle.zip -d ./source
+      - name: Unit tests and APK
+        working-directory: source/AuroraTwinAndroid
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AuroraTwin-demo-debug-apk
+          path: source/AuroraTwinAndroid/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
