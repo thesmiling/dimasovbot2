@@ -37,6 +37,17 @@ jobs:
           gradle-version: '9.3.1'
       - name: Extract native project
         run: unzip -oq aurora-android/source_bundle.zip -d ./source
+      - name: Restore missing Compose saveable dependency
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("source/AuroraTwinAndroid/app/build.gradle.kts")
+          s = p.read_text()
+          if 'androidx.compose.runtime:runtime-saveable' not in s:
+              s = s.replace('implementation("androidx.compose.ui:ui")', 'implementation("androidx.compose.ui:ui")\n    implementation("androidx.compose.runtime:runtime-saveable")')
+              p.write_text(s)
+          PY
       - name: Unit tests and APK
         working-directory: source/AuroraTwinAndroid
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
