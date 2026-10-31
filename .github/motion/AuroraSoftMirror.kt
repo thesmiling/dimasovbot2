@@ -241,3 +241,30 @@ fun AuroraActionButton(
         Text(text, fontWeight=FontWeight.SemiBold, fontSize=15.sp)
     }
 }
+
+/** Quiet secondary action feedback; same semantics as the former OutlineButton. */
+@Composable
+fun AuroraOutlineButton(
+    text: String, onClick: () -> Unit, modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        if (pressed && motionAllowed(context, true)) .988f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "secondary-press"
+    )
+    OutlinedButton(
+        onClick = onClick,
+        interactionSource = source,
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale },
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, if (pressed) Aura.mint.copy(alpha = .70f) else Aura.border
+        )
+    ) {
+        Text(text, color = Aura.white)
+    }
+}
