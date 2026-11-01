@@ -9,14 +9,17 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -47,60 +50,76 @@ private fun softTime(enabled: Boolean, duration: Int = 26000): Float {
     return time
 }
 
+
 @Composable
 fun AuroraLivingBackdrop(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     intensity: Float = 1f
 ) {
-    val t = softTime(enabled, 29000)
+    val t = softTime(enabled, 14500)
     val amp = intensity.coerceIn(0f, 1f)
     Canvas(modifier) {
         val w = size.width; val h = size.height
         if (w <= 0f || h <= 0f) return@Canvas
-        val center1 = Offset(w * (.76f + .045f * sin(t)), h * (.13f + .045f * cos(t)))
-        val center2 = Offset(w * (.05f + .035f * cos(t * .72f)), h * .74f)
-        val radius = max(w, h) * .45f
-        drawCircle(brush = Brush.radialGradient(
-            listOf(Aura.violet.copy(alpha = .095f * amp),
-                   Aura.cyan.copy(alpha = .019f * amp), Color.Transparent),
-            center = center1, radius = radius), radius = radius, center = center1)
-        drawCircle(brush = Brush.radialGradient(
-            listOf(Aura.mint.copy(alpha = .04f * amp), Color.Transparent),
-            center = center2, radius = radius * .82f),
-            radius = radius * .82f, center = center2)
-        // Tiny boundary highlights only, not a field of dots over the forms.
+        // Independent moving aurora light: larger travel and brighter than v0.3.
+        // Intentionally stays below foreground content and uses low contrast.
+        val left = Offset(w * (.18f + .16f * sin(t)), h * (.26f + .09f * cos(t)))
+        val right = Offset(w * (.75f + .17f * sin(t + 1.9f)), h * (.71f + .12f * cos(t + 1.1f)))
+        val r = max(w, h) * .56f
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(Aura.cyan.copy(alpha=.20f*amp), Aura.mint.copy(alpha=.06f*amp),
+                    Color.Transparent), center=left, radius=r),
+            center=left, radius=r
+        )
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(Aura.violet.copy(alpha=.20f*amp),
+                    Aura.violet.copy(alpha=.04f*amp), Color.Transparent),
+                center=right, radius=r),
+            center=right, radius=r
+        )
+        // Only a few guiding lights: no noisy particle rain across the UI.
         for (i in 0 until 9) {
-            val fx = ((i * 41 + 11) % 97) / 97f
+            val fx = ((i * 43 + 11) % 97) / 97f
             val fy = ((i * 31 + 19) % 89) / 89f
-            if (fx in .18f.. .82f && fy in .22f.. .74f) continue
-            val pos = Offset(w * fx + sin(t + i) * 5.dp.toPx(),
-                             h * fy + cos(t * .67f + i) * 4.dp.toPx())
-            val glow = .5f + .5f * sin(t * 1.2f + i)
+            val x = w * fx + sin(t + i*.6f) * 13.dp.toPx()
+            val y = h * fy + cos(t*.7f + i) * 8.dp.toPx()
+            val glow = .55f + .45f * sin(t*1.5f + i)
             drawCircle(
-                color = (if (i % 2 == 0) Aura.cyan else Aura.violet)
-                    .copy(alpha = (.09f + .11f * glow) * amp),
-                radius = (1f + .45f * glow).dp.toPx(), center = pos)
+                color=(if (i%2==0) Aura.cyan else Aura.violet)
+                    .copy(alpha=(.12f+.13f*glow)*amp),
+                radius=(1.1f + .45f*glow).dp.toPx(),
+                center=Offset(x,y)
+            )
         }
     }
 }
 
-/** A soft curved thread that connects abstract identities; no humanoid animation. */
-private fun connectingPath(width: Float, height: Float, t: Float, index: Int): Path {
-    val phase = t * .72f + index * 1.7f
-    val path = Path()
-    val fromX = width * .27f
-    val toX = width * .73f
-    val base = height * (.65f + index * .047f)
-    path.moveTo(fromX, base - 10f)
-    path.cubicTo(
-        width * .40f, height * (.64f + index * .032f) + sin(phase) * height * .035f,
-        width * .59f, height * (.60f + index * .032f) + cos(phase) * height * .038f,
-        toX, base - 10f
-    )
-    return path
+/**
+ * Loose abstract silhouettes used only as light masks.
+ * This moves light within the heads but never moves a face or simulates a human.
+ * Both paths approximate the existing twin_hero illustration.
+ */
+private fun glassProfile(w: Float, h: Float, right: Boolean): Path {
+    fun x(v: Float): Float = w * (if(right) 1f-v else v)
+    return Path().apply {
+        moveTo(x(.50f), h*.085f)
+        cubicTo(x(.36f), h*.085f, x(.24f),h*.11f, x(.21f),h*.29f)
+        cubicTo(x(.20f), h*.41f, x(.17f),h*.45f, x(.125f),h*.52f)
+        cubicTo(x(.09f), h*.57f, x(.165f),h*.59f, x(.168f),h*.65f)
+        cubicTo(x(.16f), h*.75f, x(.15f),h*.81f, x(.27f),h*.81f)
+        cubicTo(x(.35f),h*.82f, x(.40f),h*.92f, x(.40f),h)
+        lineTo(x(.50f),h)
+        close()
+    }
 }
 
+/**
+ * This is the actual visible animation layer for v0.4.
+ * All dynamic highlights draw ABOVE the opaque bitmap and INSIDE the silhouette.
+ */
 @Composable
 fun AuroraHeroAlive(
     modifier: Modifier = Modifier,
@@ -111,89 +130,142 @@ fun AuroraHeroAlive(
 ) {
     val context = LocalContext.current
     val allowed = motionAllowed(context, animate)
-    val t = softTime(animate, 22000)
-    val amp = intensity.coerceIn(.20f, 1f)
+    val t = softTime(animate, 9200)
+    val u = (t/(2f*PI.toFloat())).coerceIn(0f,1f)
+    val amp = intensity.coerceIn(.33f,1f)
     var touchPoint by remember { mutableStateOf(Offset.Zero) }
-    var touchToken by remember { mutableIntStateOf(0) }
-    val halo = remember { Animatable(1f) }
-    LaunchedEffect(touchToken) {
-        if (touchToken > 0 && allowed) {
-            halo.snapTo(0f)
-            halo.animateTo(1f, animationSpec = tween(700, easing = FastOutSlowInEasing))
+    var touches by remember { mutableIntStateOf(0) }
+    val ring = remember { Animatable(1f) }
+    LaunchedEffect(touches) {
+        if (touches > 0 && allowed) {
+            ring.snapTo(0f)
+            ring.animateTo(1f, animationSpec=tween(850, easing=FastOutSlowInEasing))
         }
     }
-    val radius = RoundedCornerShape(25.dp)
-    Box(modifier.fillMaxWidth().height(height).clip(radius)
-        .background(Brush.verticalGradient(listOf(
-            Color(0xFF10182F), Color(0xFF101B37), Aura.deep)))) {
-        // Illumination BEHIND the static illustrative silhouettes.
-        Canvas(Modifier.fillMaxSize()) {
-            val w = size.width; val h = size.height
-            val r = w * .64f
-            val shift = if (allowed) sin(t) * w * .018f else 0f
-            val a = Offset(w * .36f + shift, h * .46f)
-            val b = Offset(w * .65f - shift, h * .48f)
-            drawCircle(Brush.radialGradient(
-                listOf(Aura.cyan.copy(alpha = .17f * amp), Color.Transparent),
-                center=a, radius=r), center=a, radius=r)
-            drawCircle(Brush.radialGradient(
-                listOf(Aura.violet.copy(alpha = .20f * amp), Color.Transparent),
-                center=b, radius=r), center=b, radius=r)
-        }
-        // This image never moves, distorts, or mimics a living human.
+    Box(modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(25.dp))
+        .background(Aura.deep)) {
+        // Static original art is preserved. The foreground Canvas below gives it life.
         Image(
             painter=painterResource(R.drawable.twin_hero),
-            contentDescription="Абстрактный символ связи тебя и цифрового двойника",
-            modifier=Modifier.fillMaxSize().padding(4.dp),
-            contentScale=ContentScale.Fit
+            contentDescription="Абстрактный символ цифрового двойника",
+            modifier=Modifier.fillMaxSize().padding(2.dp),
+            contentScale=ContentScale.FillBounds
         )
         Canvas(Modifier.fillMaxSize().pointerInput(allowed) {
-            detectTapGestures { point -> touchPoint = point; touchToken++ }
+            detectTapGestures { point -> touchPoint=point; touches++ }
         }) {
-            val w = size.width; val h = size.height
-            if (w < 1f || h < 1f) return@Canvas
-            // Two hand-drawn, flowing threads, with soft bloom under the fine stroke.
+            val w=size.width; val h=size.height
+            if (w<1f||h<1f) return@Canvas
+            // Every full loop the reflection travels through the TWO profiles.
+            // The seam's point of light moves separately, so motion is easy to notice.
+            val sweep = w*(-.23f + 1.46f*u)
+            val visibility = (.38f + .62f*sin(PI.toFloat()*u)).coerceIn(0f,1f)
+            for (right in listOf(false,true)) {
+                clipPath(glassProfile(w,h,right)) {
+                    // A clearly moving, broad glass reflection (not hidden behind the png).
+                    val gloss = Brush.horizontalGradient(
+                        colorStops = arrayOf(
+                            0.0f to Color.Transparent,
+                            0.28f to Aura.cyan.copy(alpha=.09f*amp*visibility),
+                            0.48f to Aura.white.copy(alpha=.27f*amp*visibility),
+                            0.55f to Aura.mint.copy(alpha=.18f*amp*visibility),
+                            0.79f to Aura.violet.copy(alpha=.08f*amp*visibility),
+                            1.0f to Color.Transparent
+                        ),
+                        startX=sweep-w*.25f,endX=sweep+w*.25f
+                    )
+                    drawRect(brush=gloss)
+                    // Two translucent floating light clouds per silhouette.
+                    val cx=w*(if(right) .70f else .30f) +
+                        sin(t+(if(right) 1.4f else 0f))*w*.065f
+                    val cy=h*(.35f + .12f*cos(t*.82f+(if(right) .9f else 0f)))
+                    val ctr=Offset(cx,cy)
+                    val r=w*.28f
+                    drawCircle(brush=Brush.radialGradient(
+                        listOf(
+                            (if(right) Aura.violet else Aura.cyan)
+                                .copy(alpha=.28f*amp),
+                            (if(right) Aura.cyan else Aura.mint)
+                                .copy(alpha=.07f*amp), Color.Transparent
+                        ),center=ctr,radius=r),center=ctr,radius=r)
+                    // Fine animated fibers flow across the *interior*, not around the face.
+                    for (fiber in 0 until 3) {
+                        val curve=Path()
+                        val y=h*(.22f + .17f*fiber) +
+                            sin(t + fiber*1.2f + (if(right) .7f else 0f))*h*.052f
+                        curve.moveTo(w*.17f,y)
+                        curve.cubicTo(w*.35f,y-h*.045f,
+                            w*.57f,y+h*.06f,
+                            w*.84f,y-h*.02f)
+                        val c=if (fiber==1) Aura.violet else Aura.mint
+                        drawPath(curve,color=c.copy(alpha=.12f*amp),
+                            style=Stroke(width=5.dp.toPx(),cap=StrokeCap.Round))
+                        drawPath(curve,color=c.copy(alpha=.28f*amp),
+                            style=Stroke(width=.85.dp.toPx(),cap=StrokeCap.Round))
+                    }
+                }
+            }
+            // Bright travel along the central connection, visible even on a dark screen.
+            val beamStart=Offset(w*.5f,h*.12f)
+            val beamEnd=Offset(w*.5f,h*.9f)
+            val beamGlow=.16f + .10f*(.5f+.5f*cos(t*.7f))
+            drawLine(Aura.mint.copy(alpha=beamGlow*amp),
+                start=beamStart,end=beamEnd,strokeWidth=6.dp.toPx())
+            drawLine(brush=Brush.verticalGradient(listOf(
+                Color.Transparent,Aura.cyan.copy(alpha=.56f*amp),
+                Aura.violet.copy(alpha=.40f*amp),Color.Transparent)),
+                start=beamStart,end=beamEnd,strokeWidth=1.6.dp.toPx())
+            val beamY=h*(.15f+.70f*(.5f-.5f*cos(t)))
+            val bead=Offset(w*.5f,beamY)
+            drawCircle(brush=Brush.radialGradient(
+                listOf(Aura.mint.copy(alpha=.31f*amp),
+                    Aura.cyan.copy(alpha=.10f*amp),Color.Transparent),
+                center=bead,radius=31.dp.toPx()),
+                radius=31.dp.toPx(),center=bead)
+            drawCircle(Aura.white.copy(alpha=.72f*amp),
+                radius=2.5.dp.toPx(),center=bead)
+            // Two gently animated connectors sweep between the forms.
             for (j in 0..1) {
-                val curve = connectingPath(w, h, t, j)
-                val c = if (j == 0) Aura.mint else Aura.violet
-                drawPath(curve, c.copy(alpha=.050f*amp), style=Stroke(width=13.dp.toPx()))
-                drawPath(curve, c.copy(alpha=(if(active) .37f else .25f)*amp),
-                    style=Stroke(width=1.3.dp.toPx(), cap=StrokeCap.Round))
+                val thread=Path()
+                val y=h*(.70f+j*.07f)
+                thread.moveTo(w*.25f,y)
+                thread.cubicTo(
+                    w*.38f,y-h*.08f + sin(t+j)*h*.033f,
+                    w*.61f,y+h*.07f + cos(t+j)*h*.033f,
+                    w*.75f,y
+                )
+                val col=if(j==0) Aura.cyan else Aura.violet
+                drawPath(thread,col.copy(alpha=.10f*amp),
+                    style=Stroke(width=12.dp.toPx(),cap=StrokeCap.Round))
+                drawPath(thread,col.copy(alpha=.48f*amp),
+                    style=Stroke(width=1.7.dp.toPx(),cap=StrokeCap.Round))
             }
-            // A few motes follow the connecting threads, not the silhouette perimeter.
-            for (i in 0 until 7) {
-                val u = ((i/7f) + t/(2f*PI.toFloat()) * (if(i%2==0) .27f else -.19f))
-                    .let { it - floor(it) }
-                val x = w*(.27f + .46f*u)
-                val pathPhase = t * .72f + (i % 2) * 1.7f
-                val y = h*(.64f+(i%2)*.047f) + sin(u*PI.toFloat()*1.6f+pathPhase) * h*.025f
-                val alpha = (sin(PI.toFloat()*u).coerceAtLeast(0f)) * .48f * amp
-                val color = if(i%2==0) Aura.mint else Aura.violet
-                drawCircle(color.copy(alpha=alpha*.20f), radius=7.dp.toPx(), center=Offset(x,y))
-                drawCircle(color.copy(alpha=alpha), radius=1.65.dp.toPx(), center=Offset(x,y))
+            // A deliberate touch response, distinct from the ambient movement.
+            if(allowed && touches>0 && ring.value<1f) {
+                val progress=ring.value
+                drawCircle(Aura.mint.copy(alpha=(1f-progress)*.45f),
+                    center=touchPoint,radius=(12f+65f*progress).dp.toPx(),
+                    style=Stroke(width=(2.3f-1.7f*progress).dp.toPx()))
             }
-            val pulse = if (allowed) .7f + .3f * sin(t*1.45f) else .8f
-            val center = Offset(w*.5f, h*.67f)
-            drawCircle(
-                brush = Brush.radialGradient(listOf(
-                    Aura.mint.copy(alpha=(if(active) .22f else .13f)*amp*pulse),
-                    Aura.violet.copy(alpha=.055f*amp), Color.Transparent),
-                    center=center, radius=w*.17f),
-                radius=w*.17f, center=center)
-            if (allowed && touchToken>0 && halo.value<1f) {
-                val k=halo.value
-                val dist=(15f+54f*k).dp.toPx()
-                drawCircle(color=Aura.cyan.copy(alpha=(1f-k)*.25f),
-                    center=touchPoint, radius=dist,
-                    style=Stroke(width=(1.5f-k).dp.toPx()))
-            }
-            // A subtle internal glass border to make it feel like a considered object.
             drawRoundRect(
                 brush=Brush.horizontalGradient(listOf(
-                    Aura.cyan.copy(alpha=.12f), Color.Transparent,
-                    Aura.violet.copy(alpha=.12f))),
+                    Aura.cyan.copy(alpha=.22f),Color.Transparent,
+                    Aura.violet.copy(alpha=.22f))),
                 cornerRadius=androidx.compose.ui.geometry.CornerRadius(25.dp.toPx()),
-                style=Stroke(width=.9.dp.toPx()))
+                style=Stroke(width=1.dp.toPx()))
+        }
+        if (!allowed) {
+            val reason= if(!animate) "Свечение выключено в настройках"
+                else "Движение приостановлено настройками Android или энергосбережением"
+            Text(
+                reason,
+                color=Aura.secondary,
+                fontSize=10.sp,
+                modifier=Modifier.align(Alignment.BottomCenter)
+                    .background(Aura.deep.copy(alpha=.91f),
+                        RoundedCornerShape(topStart=8.dp,topEnd=8.dp))
+                    .padding(horizontal=10.dp, vertical=5.dp)
+            )
         }
     }
 }
