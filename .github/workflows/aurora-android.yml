@@ -54,6 +54,8 @@ jobs:
         run: python3 .github/scripts/aurora_motion_apply.py
       - name: Apply Soft Mirror v0.3 and transition polish
         run: python3 .github/scripts/aurora_soft_mirror_apply.py
+      - name: Apply Motion v0.4 GPU field and seamless identity background
+        run: python3 .github/scripts/aurora_motion_v4.py
       - name: Unit tests and APK
         working-directory: source/AuroraTwinAndroid
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
