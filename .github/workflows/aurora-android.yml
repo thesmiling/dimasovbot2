@@ -24,9 +24,7 @@ jobs:
       - name: Android API 37
         shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          "$SDKMANAGER" --version
           "$SDKMANAGER" 'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools'
           if [ -d "$ANDROID_HOME/platforms/android-37.0" ] && [ ! -e "$ANDROID_HOME/platforms/android-37" ]; then
             ln -s "$ANDROID_HOME/platforms/android-37.0" "$ANDROID_HOME/platforms/android-37"
@@ -48,14 +46,16 @@ jobs:
               s = s.replace('implementation("androidx.compose.ui:ui")', 'implementation("androidx.compose.ui:ui")\n    implementation("androidx.compose.runtime:runtime-saveable")')
               p.write_text(s)
           PY
-      - name: Apply UX fixes and verify screen regression guards
+      - name: Apply UX fixes
         run: python3 .github/scripts/aurora_ux_fix.py
-      - name: Apply native living Aurora graphics
+      - name: Apply native living graphics
         run: python3 .github/scripts/aurora_motion_apply.py
-      - name: Apply Soft Mirror v0.3 and transition polish
+      - name: Apply Soft Mirror v0.3
         run: python3 .github/scripts/aurora_soft_mirror_apply.py
-      - name: Apply Motion v0.4 GPU field and seamless identity background
+      - name: Apply Motion v0.4 base
         run: python3 .github/scripts/aurora_motion_v4.py
+      - name: Apply Motion v0.5 performance and light pass
+        run: python3 .github/scripts/aurora_motion_v5.py
       - name: Unit tests and APK
         working-directory: source/AuroraTwinAndroid
         run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
