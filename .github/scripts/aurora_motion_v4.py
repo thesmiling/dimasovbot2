@@ -151,6 +151,8 @@ half4 main(float2 fragCoord) {
 }
 """
 
+private fun fractF(v: Float): Float = v - floor(v)
+
 @Composable
 private fun liveTime(enabled: Boolean, duration: Int = 26000): Float {
     val context = LocalContext.current
@@ -199,16 +201,16 @@ private fun NativeParticleFallback(
         val h = size.height
         for (i in 0 until 34) {
             val f = i.toFloat()
-            val sx = fract(sin(f * 91.17f) * 43758.5453f)
-            val sy = fract(sin(f * 17.31f) * 19341.123f)
-            val speed = .018f + fract(sin(f * 7.11f) * 1712.1f) * .035f
-            val dir = fract(sin(f * 13.71f) * 8123.7f) * 2f * PI.toFloat()
-            var x = fract(sx + cos(dir) * speed * time)
-            var y = fract(sy + sin(dir) * speed * time)
+            val sx = fractF(sin(f * 91.17f) * 43758.5453f)
+            val sy = fractF(sin(f * 17.31f) * 19341.123f)
+            val speed = .018f + fractF(sin(f * 7.11f) * 1712.1f) * .035f
+            val dir = fractF(sin(f * 13.71f) * 8123.7f) * 2f * PI.toFloat()
+            var x = fractF(sx + cos(dir) * speed * time)
+            var y = fractF(sy + sin(dir) * speed * time)
             x += sin(time * (.11f + f * .0017f) + f) * .025f
             y += cos(time * (.09f + f * .0013f) + f * 1.4f) * .02f
-            x = fract(x)
-            y = fract(y)
+            x = fractF(x)
+            y = fractF(y)
             val c = if (i % 3 == 0) Aura.violet else Aura.cyan
             drawCircle(
                 color = c.copy(alpha = (.18f + .16f * sin(time * .8f + f) * .5f + .08f) * intensity),
@@ -317,12 +319,12 @@ fun AuroraHeroAlive(
 
             for (i in 0 until 12) {
                 val f = i.toFloat()
-                val baseX = fract(sin(f * 23.17f) * 43758.5453f)
-                val baseY = fract(sin(f * 71.31f) * 19341.123f)
-                val vx = (0.006f + fract(sin(f * 4.7f) * 901.1f) * .012f)
-                val vy = (fract(sin(f * 9.2f) * 401.1f) - .5f) * .012f
-                val x = fract(baseX + vx * t + sin(t * .13f + f) * .025f)
-                val y = fract(baseY + vy * t + cos(t * .11f + f * 1.2f) * .018f)
+                val baseX = fractF(sin(f * 23.17f) * 43758.5453f)
+                val baseY = fractF(sin(f * 71.31f) * 19341.123f)
+                val vx = (0.006f + fractF(sin(f * 4.7f) * 901.1f) * .012f)
+                val vy = (fractF(sin(f * 9.2f) * 401.1f) - .5f) * .012f
+                val x = fractF(baseX + vx * t + sin(t * .13f + f) * .025f)
+                val y = fractF(baseY + vy * t + cos(t * .11f + f * 1.2f) * .018f)
                 val c = if (i % 2 == 0) Aura.cyan else Aura.violet
                 val pulse = .58f + .42f * sin(t * 1.1f + f * 1.9f)
                 drawCircle(
